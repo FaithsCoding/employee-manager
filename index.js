@@ -2,22 +2,35 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const fs = require("fs");
 
 const connection = mysql.createConnection({
-  host: "localhost",
-  //port number
-  port: 3306,
-  //username
+  host: "127.0.0.1",
   user: "root",
-  //password
-  password: "new_password",
-  database: "employee-manager",
+  password: "faithscoding",
 });
 
-//catch any connection errros
 connection.connect((err) => {
-  if (err) throw err;
-  runSearch();
+  if (err) {
+    console.error("Error connecting to database:", err.stack);
+    return;
+  }
+
+  console.log("Connected to database.");
+
+  // read the contents of the schema.sql file
+  const sql = fs.readFileSync("./db/schema.sql", "utf-8");
+
+  // execute the SQL statements
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error executing SQL statements:", err.stack);
+      return;
+    }
+
+    console.log("Schema.sql file executed successfully!");
+    console.log(results);
+  });
 });
 
 //code to add prompts for main menu
