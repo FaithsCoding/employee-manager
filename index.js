@@ -88,12 +88,95 @@ function viewRole() {
 }
 
 //function to view all departments
-function  viewDepartments(){
-    connection.query("SELECT * FROM department", function(err, result, fields) {
-        if (err) throw err;
-        console.table(result);
-        // re-prompt the user for another selection
-        runSearch();
-      }
-    ); 
-};
+function viewDepartments() {
+  connection.query("SELECT * FROM department", function (err, result, fields) {
+    if (err) throw err;
+    console.table(result);
+    // re-prompt the user for another selection
+    runSearch();
+  });
+}
+
+//empty array variables
+const roleChoices = [];
+const employeeChoice = [];
+const departmentChoices = [];
+
+//function to look up each role
+function lookupRole() {
+  connection.query("SELECT * FROM role", function (err, data) {
+    if (err) throw err;
+    for (i = 0; i < data.length; i++) {
+      roleChoices.push(data[i].id + "-" + data[i].title);
+    }
+  });
+}
+
+//function to look up employees
+function lookupEmployee() {
+  connection.query("SELECT * FROM employee", function (err, data) {
+    if (err) throw err;
+    for (i = 0; i < data.length; i++) {
+      employeeChoice.push(
+        data[i].id + "-" + data[i].first_name + " " + data[i].last_name
+      );
+    }
+  });
+}
+
+//function to lookup department
+function lookupDepartments() {
+  connection.query("SELECT * FROM department", function (err, data) {
+    if (err) throw err;
+    for (i = 0; i < data.length; i++) {
+      departmentChoice.push(data[i].id + "-" + data[i].name);
+    }
+  });
+}
+
+//function to ask the user for new employee info
+function addEmployee() {
+  lookupRole();
+  lookupEmployee();
+
+  inquirer
+    .prompt([
+      {
+        name: "firstname",
+        type: "input",
+        message: "What is the employee's first name?",
+      },
+
+      {
+        name: "lastname",
+        type: "input",
+        message: "What is the employee's last name?",
+      },
+
+      {
+        name: "role",
+        type: "list",
+        message: "What is the employee's role?",
+        choices: roleChoices,
+      },
+
+      {
+        name: "reportingTo",
+        type: "list",
+        message: "Who is the employee's manager?",
+        choices: empChoices,
+      },
+    ])
+    .then(function (answer) {
+      var getRoleId = answer.role.split("-");
+      var getReportingToId = answer.reportingTo.split("-");
+      var query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+             VALUES ('${answer.firstname}','${answer.lastname}','${getRoleId[0]}','${getReportingToId[0]}')`;
+      connection.query(query, function (err, res) {
+        console.log(
+          `new employee ${answer.firstname} ${answer.lastname} added!`
+        );
+      });
+      runSearch();
+    });
+}
