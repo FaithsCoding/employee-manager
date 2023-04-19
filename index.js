@@ -1,6 +1,6 @@
 //dependencies
 const mysql = require("mysql");
-const inquirier = require("inquirier");
+const inquirer = require("inquirer");
 const cTable = require("console.table");
 
 const connection = mysql.createConnection({
@@ -30,7 +30,7 @@ function runSearch() {
       choices: [
         "View All Employees",
         "View Department",
-        "View role",
+        "View Role",
         "Add Employee",
         "Add Department",
         "Add Role",
@@ -43,13 +43,13 @@ function runSearch() {
       if (answer.selection === "View All Employees") {
         viewAll();
       } else if (answer.selection === "View Department") {
-        viewDepts();
+        viewDepartments();
       } else if (answer.selection === "View role") {
-        viewrole();
+        viewRole();
       } else if (answer.selection === "Add Employee") {
         addEmployee();
       } else if (answer.selection === "Add Department") {
-        addDept();
+        addDepartment();
       } else if (answer.selection === "Add Role") {
         addRole();
       } else if (answer.selection === "Update Role") {
@@ -59,3 +59,41 @@ function runSearch() {
       }
     });
 }
+
+//function to view all employees
+function viewAllEmployees() {
+  //sends sql statements to sql server for execution
+  connection.query(
+    "SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, employee.manager_id, role.title, role.salary, role.id, department.id FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.deparment_id = deparment.id",
+    function (err, result, fields) {
+      if (err) throw err;
+      console.table(result);
+      //another prompt to the user for another selection
+      runSearch();
+    }
+  );
+}
+
+// function to view all roles
+function viewRole() {
+  connection.query(
+    "SELECT role.id, role.title, role.salary, role.department_id, department.id, department.name FROM role LEFT JOIN department on role.department_id = department.id",
+    function (err, result, fields) {
+      if (err) throw err;
+      console.table(result);
+      // another prompt for the user to choose another selection
+      runSearch();
+    }
+  );
+}
+
+//function to view all departments
+function  viewDepartments(){
+    connection.query("SELECT * FROM department", function(err, result, fields) {
+        if (err) throw err;
+        console.table(result);
+        // re-prompt the user for another selection
+        runSearch();
+      }
+    ); 
+};
