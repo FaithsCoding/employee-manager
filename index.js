@@ -230,7 +230,7 @@ let departmentChoices = [];
 function searchRole(callback) {
   connection.query("SELECT * FROM role", function (err, data) {
     if (err) throw err;
-    const roleChoices = data.map((role) => {
+    roleChoices = data.map((role) => {
       return {
         name: `${role.title} (ID: ${role.id})`,
         value: role.id,
