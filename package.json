@@ -4,7 +4,9 @@
   "description": "command line application for an employee management system",
   "main": "index.js",
   "dependencies": {
+    "console-clear": "^1.1.1",
     "console.table": "^0.10.0",
+    "figlet": "^1.6.0",
     "fs": "^0.0.1-security",
     "inquirer": "^8.2.0",
     "mysql": "^2.18.1"
