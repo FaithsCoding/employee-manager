@@ -73,16 +73,53 @@ function runSearch() {
 }
 
 function viewAllEmployees() {
-  db.query(
-    "SELECT employees.id, employees.first_name, employees.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees LEFT JOIN role ON employees.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employees manager ON employees.manager_id = manager.id",
-    function (err, result) {
-      if (err) throw err;
-      console.table(result);
-      runSearch();
-    }
-  );
-}
+  inquirer
+    .prompt([
+      {
+        name: "viewOption",
+        type: "list",
+        message:
+          "Would you like to view all employees or employees by manager?",
+        choices: ["All employees", "Employees by manager"],
+      },
+    ])
+    .then((answer) => {
+      if (answer.viewOption === "All employees") {
+        db.query(
+          "SELECT employees.id, employees.first_name, employees.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees LEFT JOIN role ON employees.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employees manager ON employees.manager_id = manager.id",
+          function (err, result) {
+            if (err) throw err;
+            console.table(result);
+            runSearch();
+          }
+        );
+      } else if (answer.viewOption === "Employees by manager") {
+        searchManager(function (managerChoices) {
+          inquirer
+            .prompt([
+              {
+                name: "managerId",
+                type: "list",
+                message: "Which manager's employees would you like to view?",
+                choices: managerChoices,
+              },
+            ])
+            .then(function (managerAnswer) {
+              const managerId = managerAnswer.managerId;
+              const query =
+                "SELECT employees.id, employees.first_name, employees.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees LEFT JOIN role ON employees.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employees manager ON employees.manager_id = manager.id WHERE manager.id = ?";
+              const values = [managerId];
 
+              db.query(query, values, function (err, result) {
+                if (err) throw err;
+                console.table(result);
+                runSearch();
+              });
+            });
+        });
+      }
+    });
+}
 function viewDepartments() {
   db.query("SELECT * FROM department", function (err, result) {
     if (err) throw err;
@@ -274,7 +311,7 @@ function deleteEmployee() {
       ])
       .then(function (answer) {
         var getEmployeeId = String(answer.employee).split("-");
-        var query = `DELETE FROM employee WHERE id = '${getEmployeeId[0]}'`;
+        var query = `DELETE FROM employees WHERE id = '${getEmployeeId[0]}'`;
         db.query(query, function (err, res) {
           if (err) throw err;
           console.log(`Employee deleted successfully!`);
