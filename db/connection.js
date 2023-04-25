@@ -6,7 +6,7 @@ require("dotenv").config();
 const connection = mysql.createConnection({
   host: "127.0.0.1",
   //this allows my db login details to be encoded thereofore not as easily accessible to everyone
-  user: process.env.MYSQL_USERNAME,
+  user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
 });
