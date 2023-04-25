@@ -1,4 +1,7 @@
+-- use fb employee_manager
 USE employee_manager;
+
+-- inserts multiple rows into each table
 INSERT INTO department(id, name) VALUES 
   (1, 'Management'),
   (2, 'Engineering'),
