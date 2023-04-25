@@ -9,7 +9,7 @@
     "figlet": "^1.6.0",
     "fs": "^0.0.1-security",
     "inquirer": "^8.2.0",
-    "mysql": "^2.18.1"
+    "mysql2": "^3.2.4"
   },
   "scripts": {
     "test": "jest"

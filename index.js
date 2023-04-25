@@ -1,34 +1,11 @@
-//dependencies
 const inquirer = require("inquirer");
-const cTable = require("console.table");
-const fs = require("fs");
-const query = require("./db/query.sql");
+require("console.table");
+const db = require("./db/connection");
 const art = require("./helpers/employee-manager-art");
-const clear = require("console-clear");
 
-const mysql = require("mysql");
+// Call the art function to display the l
 
-const connection = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "employee_manager",
-  password: "Faith123",
-  database: "employee_manager",
-});
-
-module.exports = connection;
-
-connection.connect((err) => {
-  if (err) {
-    console.error("Error connecting to database:", err.stack);
-    return;
-  }
-  console.log("Connected to database.");
-  runSearch();
-});
-
-art();
-
-//code to add prompts for main menu
+// Define the runSearch function
 function runSearch() {
   inquirer
     .prompt({
@@ -42,6 +19,7 @@ function runSearch() {
         "Add Employee",
         "Add Department",
         "Add Role",
+        "Update Employee Role",
         "Update Employee Manager",
         "Delete Department",
         "Delete Role",
@@ -52,13 +30,13 @@ function runSearch() {
     .then((answer) => {
       switch (answer.selection) {
         case "View All Employees":
-          viewAllEmployees(connection);
+          viewAllEmployees();
           break;
         case "View All Departments":
-          viewDepartments(connection);
+          viewDepartments();
           break;
         case "View All Roles":
-          viewRole(connection);
+          viewRole();
           break;
         case "Add Employee":
           addEmployee();
@@ -78,15 +56,14 @@ function runSearch() {
         case "Delete Employee":
           deleteEmployee();
           break;
-        case "Update Employee Manager":
-          updateManager(connection);
+        case "Update Employee Role":
+          updateEmployeeRole();
           break;
-        case "Update Managaer":
-          updateManager(connection);
+        case "Update Employee Manager":
+          updateManager();
           break;
         case "Exit":
-          console.log("Thanks for using Employee Manager!");
-          process.exit();
+          exitProgram();
           break;
         default:
           console.log("Invalid selection.");
@@ -96,18 +73,18 @@ function runSearch() {
 }
 
 function viewAllEmployees() {
-  connection.query(
-    "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id",
+  db.query(
+    "SELECT employees.id, employees.first_name, employees.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees LEFT JOIN role ON employees.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employees manager ON employees.manager_id = manager.id",
     function (err, result) {
       if (err) throw err;
-      console.table("All Employees", result);
+      console.table(result);
       runSearch();
     }
   );
 }
 
 function viewDepartments() {
-  connection.query("SELECT * FROM department", function (err, result) {
+  db.query("SELECT * FROM department", function (err, result) {
     if (err) throw err;
     console.table("Departments", result);
     runSearch();
@@ -115,7 +92,7 @@ function viewDepartments() {
 }
 
 function viewRole() {
-  connection.query(
+  db.query(
     "SELECT role.id, role.title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id",
     function (err, result) {
       if (err) throw err;
@@ -157,13 +134,14 @@ function addEmployee() {
           .then(function (answer) {
             var getRoleId = String(answer.role).split("-");
             var getReportingToId = String(answer.reportingTo).split("-");
-            var query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+            var query = `INSERT INTO employees (first_name, last_name, role_id, manager_id)
                  VALUES ('${answer.firstname}','${answer.lastname}','${getRoleId[0]}','${getReportingToId[0]}')`;
-            connection.query(query, function (err, res) {
+            db.query(query, function (err, res) {
               console.log(
                 `new employee ${answer.firstname} ${answer.lastname} added!`
               );
             });
+
             runSearch();
           });
       });
@@ -186,9 +164,10 @@ function addDepartment() {
           .then(function (answer) {
             var query = `INSERT INTO department (name)
                  VALUES ('${answer.dept}')`;
-            connection.query(query, function (err, res) {
+            db.query(query, function (err, res) {
               console.log(`-------new department added: ${answer.dept}-------`);
             });
+
             runSearch();
           });
       });
@@ -224,9 +203,10 @@ function addRole() {
             var getDeptId = String(answer.dept).split("-");
             var query = `INSERT INTO role (title, salary, department_id)
                   VALUES ('${answer.role}','${answer.salary}','${getDeptId[0]}')`;
-            connection.query(query, function (err, res) {
+            db.query(query, function (err, res) {
               console.log(`<br>-----new role ${answer.role} added!------`);
             });
+
             runSearch();
           });
       });
@@ -248,10 +228,11 @@ function deleteDepartment() {
       .then(function (answer) {
         var getDeptId = String(answer.dept).split("-");
         var query = `DELETE FROM department WHERE id = '${getDeptId[0]}'`;
-        connection.query(query, function (err, res) {
+        db.query(query, function (err, res) {
           if (err) throw err;
           console.log(`Department deleted successfully!`);
         });
+
         runSearch();
       });
   });
@@ -271,7 +252,7 @@ function deleteRole() {
       .then(function (answer) {
         var getRoleId = String(answer.role).split("-");
         var query = `DELETE FROM role WHERE id = '${getRoleId[0]}'`;
-        connection.query(query, function (err, res) {
+        db.query(query, function (err, res) {
           if (err) throw err;
           console.log(`Role deleted successfully!`);
         });
@@ -294,17 +275,18 @@ function deleteEmployee() {
       .then(function (answer) {
         var getEmployeeId = String(answer.employee).split("-");
         var query = `DELETE FROM employee WHERE id = '${getEmployeeId[0]}'`;
-        connection.query(query, function (err, res) {
+        db.query(query, function (err, res) {
           if (err) throw err;
           console.log(`Employee deleted successfully!`);
         });
+
         runSearch();
       });
   });
 }
 
 function searchRole(callback) {
-  connection.query("SELECT * FROM role", function (err, result) {
+  db.query("SELECT * FROM role", function (err, result) {
     if (err) throw err;
     const roleChoices = result.map((role) => ({
       name: `${role.id} - ${role.title}`,
@@ -315,7 +297,7 @@ function searchRole(callback) {
 }
 
 function searchEmployee(callback) {
-  connection.query("SELECT * FROM employee", function (err, result) {
+  db.query("SELECT * FROM employees", function (err, result) {
     if (err) throw err;
     const employeeChoices = result.map((employee) => ({
       name: `${employee.id} - ${employee.first_name} ${employee.last_name}`,
@@ -326,7 +308,7 @@ function searchEmployee(callback) {
 }
 
 function searchDepartment(callback) {
-  connection.query("SELECT * FROM department", function (err, result) {
+  db.query("SELECT * FROM department", function (err, result) {
     if (err) throw err;
     const departmentChoices = result.map((department) => ({
       name: `${department.id} - ${department.name}`,
@@ -337,8 +319,8 @@ function searchDepartment(callback) {
 }
 
 function searchManager(callback) {
-  connection.query(
-    "SELECT * FROM employee WHERE manager_id IS NOT NULL",
+  db.query(
+    "SELECT * FROM employees WHERE manager_id IS NOT NULL",
     function (err, result) {
       if (err) throw err;
       const managerChoices = result.map((manager) => ({
@@ -349,6 +331,41 @@ function searchManager(callback) {
     }
   );
 }
+function updateEmployeeRole() {
+  searchEmployee(function (employeeChoices) {
+    searchRole(function (roleChoices) {
+      // Add this line to get roleChoices
+      inquirer
+        .prompt([
+          {
+            name: "employeeId",
+            type: "list",
+            message: "Select the employee to update the role:",
+            choices: employeeChoices,
+          },
+          {
+            name: "newRoleId",
+            type: "list",
+            message: "Select the new role for the employee:",
+            choices: roleChoices,
+          },
+        ])
+        .then(function (answers) {
+          const employeeId = answers.employeeId;
+          const newRoleId = answers.newRoleId;
+          const query = "UPDATE employees SET role_id = ? WHERE id = ?";
+          const values = [newRoleId, employeeId];
+
+          db.query(query, values, function (err, result) {
+            if (err) throw err;
+            console.log("Employee role updated successfully!");
+
+            runSearch();
+          });
+        });
+    });
+  });
+}
 
 function updateManager() {
   searchEmployee(function (employeeChoices) {
@@ -357,7 +374,7 @@ function updateManager() {
         {
           name: "employeeId",
           type: "list",
-          message: "Select the employee to update the manager:",
+          message: "Select the employees to update the manager:",
           choices: employeeChoices,
         },
       ])
@@ -376,12 +393,13 @@ function updateManager() {
             ])
             .then(function (managerAnswer) {
               const managerId = managerAnswer.managerId;
-              const query = "UPDATE employee SET manager_id = ? WHERE id = ?";
+              const query = "UPDATE employees SET manager_id = ? WHERE id = ?";
               const values = [managerId, employeeId];
 
-              connection.query(query, values, function (err, result) {
+              db.query(query, values, function (err, result) {
                 if (err) throw err;
                 console.log(`Employee manager updated successfully!`);
+
                 runSearch();
               });
             });
@@ -389,10 +407,23 @@ function updateManager() {
       });
   });
 }
-
-module.exports = {
-  viewAllEmployees,
-  viewDepartments,
-  viewRole,
-  updateManager,
-};
+function exitProgram() {
+  inquirer
+    .prompt({
+      name: "confirm",
+      type: "confirm",
+      message: "Are you sure you want to exit?",
+    })
+    .then((answer) => {
+      if (answer.confirm) {
+        console.log("Thanks for using Employee Manager!");
+        process.exit();
+      } else {
+        runSearch();
+      }
+    });
+}
+art();
+setTimeout(() => {
+  runSearch();
+}, 300);

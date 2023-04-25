@@ -1,22 +1,21 @@
 
-
-DROP DATABASE IF EXISTS registrar_db;
-CREATE DATABASE registrar_db;
+DROP DATABASE IF EXISTS employee_manager;
+CREATE DATABASE employee_manager;
 -- Use the created database
-USE registrar_db;
+USE employee_manager;
 -- Table departments created
-CREATE TABLE departments (
+CREATE TABLE department (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  department_name VARCHAR(30) NOT NULL 
+  name VARCHAR(30) 
 );
 -- Table roles created
-CREATE TABLE roles (
+CREATE TABLE role (
   id INT PRIMARY KEY AUTO_INCREMENT,
   title VARCHAR(60) NOT NULL,
   salary DECIMAL NOT NULL,
-  department_id INT  NOT NULL,
+  department_id INT,
   FOREIGN KEY (department_id)
-  REFERENCES departments(id)
+  REFERENCES department(id)
   ON DELETE CASCADE
 );
 -- Table employees created
@@ -25,10 +24,11 @@ CREATE TABLE employees (
   first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) NOT NULL,
   role_id INT NOT NULL,
-  manager_id INT,
   FOREIGN KEY (role_id)
-  REFERENCES roles(id),
+  REFERENCES role(id) 
+  ON DELETE CASCADE,
+  manager_id INT,
   FOREIGN KEY (manager_id)
   REFERENCES employees(id)
-  ON DELETE CASCADE
+  ON DELETE SET NULL
 );
