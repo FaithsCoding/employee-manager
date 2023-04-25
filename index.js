@@ -27,6 +27,7 @@ function runSearch() {
         "Exit",
       ],
     })
+    //this then function handles user input and executes the different functions depending on whats been selected
     .then((answer) => {
       switch (answer.selection) {
         case "View All Employees":
@@ -72,6 +73,7 @@ function runSearch() {
     });
 }
 
+//this function allows the user to view all employees and allows them to view by manager
 function viewAllEmployees() {
   inquirer
     .prompt([
@@ -83,16 +85,19 @@ function viewAllEmployees() {
         choices: ["All employees", "Employees by manager"],
       },
     ])
+    //then if the answer is all employees it queries the database and asks for the different categories
     .then((answer) => {
       if (answer.viewOption === "All employees") {
         db.query(
           "SELECT employees.id, employees.first_name, employees.last_name, role.title, department.name AS department, role.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees LEFT JOIN role ON employees.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employees manager ON employees.manager_id = manager.id",
           function (err, result) {
             if (err) throw err;
+            //this then consoles logs the results and runs the runsearch function
             console.table(result);
             runSearch();
           }
         );
+        //this allows the user to view the correct info if they choose to view by manager
       } else if (answer.viewOption === "Employees by manager") {
         searchManager(function (managerChoices) {
           inquirer
@@ -120,6 +125,8 @@ function viewAllEmployees() {
       }
     });
 }
+
+//this function allows the user to view all departments by querying the db
 function viewDepartments() {
   db.query("SELECT * FROM department", function (err, result) {
     if (err) throw err;
@@ -128,6 +135,7 @@ function viewDepartments() {
   });
 }
 
+//this functions allows the user to view all roles by quering the db
 function viewRole() {
   db.query(
     "SELECT role.id, role.title, department.name AS department, role.salary FROM role LEFT JOIN department ON role.department_id = department.id",
@@ -139,6 +147,7 @@ function viewRole() {
   );
 }
 
+//this function allows the user to add employees by completing each prompt for the info this then gets inserted into the correct table
 function addEmployee() {
   searchRole(function (roleChoices) {
     searchEmployee(function (employeeChoices) {
@@ -168,6 +177,7 @@ function addEmployee() {
               choices: employeeChoices,
             },
           ])
+          //this then gets the role id which is an integar and turn it into a string, this then gets inserted into the correct table with a confiration in the console log
           .then(function (answer) {
             var getRoleId = String(answer.role).split("-");
             var getReportingToId = String(answer.reportingTo).split("-");
@@ -178,7 +188,6 @@ function addEmployee() {
                 `new employee ${answer.firstname} ${answer.lastname} added!`
               );
             });
-
             runSearch();
           });
       });
@@ -186,6 +195,7 @@ function addEmployee() {
   });
 }
 
+//this allows the user to add a department and inserts it into the correct db eith a console log which takes the user input and outputs a confirmation
 function addDepartment() {
   searchRole(function (roleChoices) {
     searchEmployee(function (employeeChoices) {
@@ -204,7 +214,6 @@ function addDepartment() {
             db.query(query, function (err, res) {
               console.log(`-------new department added: ${answer.dept}-------`);
             });
-
             runSearch();
           });
       });
@@ -212,6 +221,7 @@ function addDepartment() {
   });
 }
 
+//this function allows the user to add a role once they have completed the prompts for the information
 function addRole() {
   searchRole(function (roleChoices) {
     searchEmployee(function (employeeChoices) {
@@ -235,6 +245,7 @@ function addRole() {
               message: "Enter the role's salary:",
             },
           ])
+          //this then gets the role id which is an integar and turn it into a string, this then gets inserted into the correct table with a confiration in the console log
           .then(function (answer) {
             console.log(`${answer.role}`);
             var getDeptId = String(answer.dept).split("-");
@@ -243,7 +254,6 @@ function addRole() {
             db.query(query, function (err, res) {
               console.log(`<br>-----new role ${answer.role} added!------`);
             });
-
             runSearch();
           });
       });
@@ -251,6 +261,7 @@ function addRole() {
   });
 }
 
+//this allows the user to delete a department once they complete the prompts
 function deleteDepartment() {
   searchDepartment(function (departmentChoices) {
     inquirer
@@ -262,19 +273,21 @@ function deleteDepartment() {
           choices: departmentChoices,
         },
       ])
+      //once the prompts are completed we turn the deparment id into a string then query the database to tell it where to delete from
       .then(function (answer) {
         var getDeptId = String(answer.dept).split("-");
         var query = `DELETE FROM department WHERE id = '${getDeptId[0]}'`;
         db.query(query, function (err, res) {
+          //we have also added an error handler and also a confirmation console log
           if (err) throw err;
           console.log(`Department deleted successfully!`);
         });
-
         runSearch();
       });
   });
 }
 
+//this allows the user to delete a role once they have completed the prompt
 function deleteRole() {
   searchRole(function (roleChoices) {
     inquirer
@@ -286,6 +299,7 @@ function deleteRole() {
           choices: roleChoices,
         },
       ])
+      //this then function gets the role id and changes it to a string and then queries the db to tell it where to delete from
       .then(function (answer) {
         var getRoleId = String(answer.role).split("-");
         var query = `DELETE FROM role WHERE id = '${getRoleId[0]}'`;
@@ -298,6 +312,7 @@ function deleteRole() {
   });
 }
 
+//this allows the user to delete an employee once they have completed the prompts
 function deleteEmployee() {
   searchEmployee(function (employeeChoices) {
     inquirer
@@ -316,12 +331,12 @@ function deleteEmployee() {
           if (err) throw err;
           console.log(`Employee deleted successfully!`);
         });
-
         runSearch();
       });
   });
 }
 
+//This function tells the db to select all roles available and then creates an array containing the id and title. We pass the array of choices back to the callback function
 function searchRole(callback) {
   db.query("SELECT * FROM role", function (err, result) {
     if (err) throw err;
@@ -333,6 +348,7 @@ function searchRole(callback) {
   });
 }
 
+//This function tells the db to select all employees available and then creates an array containing the id and title. We pass the array of choices back to the callback function
 function searchEmployee(callback) {
   db.query("SELECT * FROM employees", function (err, result) {
     if (err) throw err;
@@ -344,6 +360,7 @@ function searchEmployee(callback) {
   });
 }
 
+//This function tells the db to select all departments available and then creates an array containing the id and title. We pass the array of choices back to the callback function
 function searchDepartment(callback) {
   db.query("SELECT * FROM department", function (err, result) {
     if (err) throw err;
@@ -355,6 +372,7 @@ function searchDepartment(callback) {
   });
 }
 
+//This function tells the db to select all managers available and then creates an array containing the id and title. We pass the array of choices back to the callback function
 function searchManager(callback) {
   db.query(
     "SELECT * FROM employees WHERE manager_id IS NOT NULL",
@@ -368,10 +386,11 @@ function searchManager(callback) {
     }
   );
 }
+
+//This function allows the user to update an employee role by taking their input and quering the db to update set role id's. 
 function updateEmployeeRole() {
   searchEmployee(function (employeeChoices) {
     searchRole(function (roleChoices) {
-      // Add this line to get roleChoices
       inquirer
         .prompt([
           {
@@ -396,7 +415,6 @@ function updateEmployeeRole() {
           db.query(query, values, function (err, result) {
             if (err) throw err;
             console.log("Employee role updated successfully!");
-
             runSearch();
           });
         });
@@ -404,6 +422,7 @@ function updateEmployeeRole() {
   });
 }
 
+//This function allows the user to update an employees manager role by taking their input and quering the db to update set role id's. 
 function updateManager() {
   searchEmployee(function (employeeChoices) {
     inquirer
@@ -436,7 +455,6 @@ function updateManager() {
               db.query(query, values, function (err, result) {
                 if (err) throw err;
                 console.log(`Employee manager updated successfully!`);
-
                 runSearch();
               });
             });
@@ -444,6 +462,8 @@ function updateManager() {
       });
   });
 }
+
+//this function allows the user to exit the programme
 function exitProgram() {
   inquirer
     .prompt({
@@ -460,6 +480,8 @@ function exitProgram() {
       }
     });
 }
+
+//this calls the art after we have run a time delay on the runSearch function so the art has time to load before the main menu
 art();
 setTimeout(() => {
   runSearch();
