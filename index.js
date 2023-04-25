@@ -426,4 +426,4 @@ function exitProgram() {
 art();
 setTimeout(() => {
   runSearch();
-}, 300);
+}, 200);
